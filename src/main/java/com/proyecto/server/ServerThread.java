@@ -1,20 +1,31 @@
 package com.proyecto.server;
 
+import com.proyecto.dao.ClientDAO;
 import com.proyecto.dao.CorredorDAO;
+import com.proyecto.dao.EnterpriseDAO;
+import com.proyecto.model.Client;
 import com.proyecto.model.Corredor;
+import com.proyecto.model.Enterprise;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 
 public class ServerThread extends Thread {
     private final Socket socket;
     private final int idSession;
     private final CorredorDAO cdao = new CorredorDAO();
+    private final EnterpriseDAO edao = new EnterpriseDAO();
+    private final ClientDAO ctdao = new ClientDAO();
     private DataOutputStream dos;
     private DataInputStream dis;
     private Corredor aux;
+    private Enterprise enterpriseAux;
+    private List<Enterprise> enterprisesList;
+    private Client clientAux;
+    private List<Client> clientsList;
 
     public ServerThread(Socket socket, int id) {
         this.socket = socket;
@@ -44,8 +55,6 @@ public class ServerThread extends Thread {
     @Override
     public void run() {
         while (!checkLogin() && !socket.isClosed()) {
-            System.out.println(checkLogin() + " login");
-            System.out.println(socket.isConnected() + " socket");
         }
         operate();
         //querys con menu
@@ -65,12 +74,45 @@ public class ServerThread extends Thread {
             if (!option.isEmpty()) {
                 switch (option) {
                     case "1":
+                        enterprisesList = edao.selectAllEnterprise();
+                        try {
+                            if (!enterprisesList.isEmpty()) {
+                                dos.writeUTF(enterprisesList.toString());
+                            } else {
+                                dos.writeUTF("No se encuentran empresas...");
+                            }
+                        } catch (IOException e) {
+                            disconnect();
+                        }
                         break;
                     case "2":
+                        clientsList = ctdao.selectAllClient();
+                        try {
+                            if (!clientsList.isEmpty()) {
+                                dos.writeUTF(clientsList.toString());
+                            } else {
+                                dos.writeUTF("No se encuentran clientes...");
+                            }
+                        } catch (IOException e) {
+                            disconnect();
+                        }
                         break;
                     case "3":
                         break;
                     case "4":
+                        try {
+                            dos.writeUTF("Introduzca id: ");
+                            String response = dis.readUTF();
+                            int id = Integer.parseInt(response);
+                            clientAux = ctdao.selectActionsOfClient(id);
+                            if (clientAux != null) {
+                                dos.writeUTF(clientAux.toString());
+                            } else {
+                                dos.writeUTF("No se encuentra el cliente o las acciones...");
+                            }
+                        } catch (IOException e) {
+                            disconnect();
+                        }
                         break;
                     case "5":
                         break;
