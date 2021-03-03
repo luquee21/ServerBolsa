@@ -37,14 +37,19 @@ public class ConnectionUtils {
      * @return devuelve una conexion
      */
     public static java.sql.Connection getConnection() {
-        if (_conn == null) {
-            Connection c = new Connection();
-            c = new Connection("localhost", "Bolsa", "root", "");
-            try {
-                _conn = connect(c);
-            } catch (ClassNotFoundException ex) {
-            } catch (SQLException ex) {
+        try {
+            if (_conn == null || _conn.isClosed()) {
+                Connection c = new Connection();
+                c = new Connection("localhost", "Bolsa", "root", "");
+                try {
+                    _conn = connect(c);
+                } catch (ClassNotFoundException ex) {
+                } catch (SQLException ex) {
+                    System.out.println(ex);
+                }
             }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
         return _conn;
     }

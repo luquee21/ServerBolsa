@@ -1,5 +1,6 @@
 package com.proyecto.server;
 
+import com.proyecto.connection.ConnectionUtils;
 import com.proyecto.dao.ClientDAO;
 import com.proyecto.dao.CorredorDAO;
 import com.proyecto.dao.EnterpriseDAO;
@@ -11,6 +12,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.List;
 
 public class ServerThread extends Thread {
@@ -48,7 +50,8 @@ public class ServerThread extends Thread {
             dis.close();
             dos.close();
             socket.close();
-        } catch (IOException ex) {
+            ConnectionUtils.closeConnection();
+        } catch (IOException | SQLException ex) {
         }
     }
 
@@ -68,6 +71,7 @@ public class ServerThread extends Thread {
             try {
                 option = dis.readUTF();
             } catch (IOException e) {
+                disconnect();
                 e.printStackTrace();
             }
 
@@ -98,15 +102,68 @@ public class ServerThread extends Thread {
                         }
                         break;
                     case "3":
+                        boolean ok = false;
+                        try {
+                            clientsList = ctdao.selectAllClient();
+                            dos.writeUTF(clientsList.toString());
+                            if (dis.readUTF().equals("OK")) {
+                                enterprisesList = edao.selectAllEnterprise();
+                                dos.writeUTF(enterprisesList.toString());
+                                if (dis.readUTF().equals("OK")) {
+                                    dos.writeUTF("Introduzca id del cliente que va a realizar la compra: ");
+                                    String response = dis.readUTF();
+                                    int id_client = Integer.parseInt(response);
+
+                                    dos.writeUTF("Introduzca id de la empresa a comprar acciones: ");
+                                    String response_enterprise = dis.readUTF();
+                                    int id_enterprise = Integer.parseInt(response_enterprise);
+
+                                    dos.writeUTF("Introduzca el número de acciones a comprar: ");
+                                    String response_actions = dis.readUTF();
+                                    int actions = Integer.parseInt(response_actions);
+
+                                    enterpriseAux = edao.getEnterprise(id_enterprise);
+                                    clientAux = ctdao.getClient(id_client);
+                                    if (clientAux != null && enterpriseAux != null) {
+                                        if (enterpriseAux.getN_actions() >= actions) {
+                                            dos.writeUTF("AVAILABLE");
+                                            ok = edao.purchaseActions(id_enterprise, id_client, actions);
+                                        } else {
+                                            dos.writeUTF("NO AVAILABLE");
+                                            if (dis.readUTF().equals("OK")) {
+                                                dos.writeUTF("El numero de acciones que deseas comprar es mayor a la acciones disponibles, quedan " + enterpriseAux.getN_actions() + " ¿Cuántas desea comprar? ");
+                                                int n_action = Integer.parseInt(dis.readUTF());
+                                                if (enterpriseAux.getN_actions() >= n_action) {
+                                                    ok = edao.purchaseActions(id_enterprise, id_client, n_action);
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        dos.writeUTF("Comprueba que el cliente y la empresa existen");
+                                    }
+
+                                    if (ok) {
+                                        dos.writeUTF("Compra realizada con éxito");
+                                    } else {
+                                        dos.writeUTF("No se ha podido realizar la compra");
+                                    }
+                                    break;
+                                }
+                            }
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            disconnect();
+                        }
                         break;
                     case "4":
                         try {
-                            dos.writeUTF("Introduzca id: ");
+                            dos.writeUTF("Introduzca id del usuario: ");
                             String response = dis.readUTF();
                             int id = Integer.parseInt(response);
-                            clientAux = ctdao.selectActionsOfClient(id);
-                            if (clientAux != null) {
-                                dos.writeUTF(clientAux.toString());
+                            clientsList = ctdao.selectActionsOfClient(id);
+                            if (clientsList != null && !clientsList.isEmpty()) {
+                                dos.writeUTF(clientsList.toString());
                             } else {
                                 dos.writeUTF("No se encuentra el cliente o las acciones...");
                             }
@@ -115,14 +172,57 @@ public class ServerThread extends Thread {
                         }
                         break;
                     case "5":
+                        try {
+                            dos.writeUTF("Introduzca id de la empresa: ");
+                            String response = dis.readUTF();
+                            int id = Integer.parseInt(response);
+                            clientsList = ctdao.selectClientsByActions(id);
+                            if (clientsList != null && !clientsList.isEmpty()) {
+                                dos.writeUTF(clientsList.toString());
+                            } else {
+                                dos.writeUTF("No se encuentran los clientes o las acciones...");
+                            }
+                        } catch (IOException e) {
+                            disconnect();
+                        }
                         break;
                     case "6":
+                        try {
+                            enterprisesList = edao.selectAllEnterprise();
+                            dos.writeUTF(enterprisesList.toString());
+                            if (dis.readUTF().equals("OK")) {
+                                dos.writeUTF("Introduzca id de la empresa a eliminar: ");
+                                String response = dis.readUTF();
+                                int id = Integer.parseInt(response);
+                                boolean aux = edao.deleteEnterprise(id);
+                                if (aux) {
+                                    dos.writeUTF("Empresa borrada con éxito");
+                                } else {
+                                    dos.writeUTF("No se ha podido borrar la empresa");
+                                }
+                            }
+
+                        } catch (IOException e) {
+                            disconnect();
+                        }
                         break;
                     case "7":
                         try {
-                            dos.writeUTF("ER JEJE 28");
+                            clientsList = ctdao.selectAllClient();
+                            dos.writeUTF(clientsList.toString());
+                            if (dis.readUTF().equals("OK")) {
+                                dos.writeUTF("Introduzca id del cliente a eliminar: ");
+                                String response = dis.readUTF();
+                                int id = Integer.parseInt(response);
+                                boolean aux = ctdao.deleteClient(id);
+                                if (aux) {
+                                    dos.writeUTF("Cliente borrado con éxito");
+                                } else {
+                                    dos.writeUTF("No se ha podido borrar el cliente");
+                                }
+                            }
+
                         } catch (IOException e) {
-                            e.printStackTrace();
                             disconnect();
                         }
                         break;

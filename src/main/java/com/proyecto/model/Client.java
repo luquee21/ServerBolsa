@@ -14,8 +14,9 @@ public class Client {
     private int n_actions;
     private String enterprisepurchaseactions;
     private String date_purchase;
+    private int code_enterprise;
 
-    public Client(int id, String name, String dni, String lastName, String email, String phone, Timestamp dateOfBirth, int n_actions, String enterprisepurchaseactions, String date_purchase) {
+    public Client(int id, String name, String dni, String lastName, String email, String phone, Timestamp dateOfBirth, int n_actions, String enterprisepurchaseactions, String date_purchase, int code_enterprise) {
         this.id = id;
         this.name = name;
         this.dni = dni;
@@ -26,6 +27,7 @@ public class Client {
         this.n_actions = n_actions;
         this.enterprisepurchaseactions = enterprisepurchaseactions;
         this.date_purchase = date_purchase;
+        this.code_enterprise = code_enterprise;
     }
 
     public Client(int id, String name, String dni, String lastName, String email, String phone, Timestamp dateOfBirth) {
@@ -36,6 +38,14 @@ public class Client {
         this.email = email;
         this.phone = phone;
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public int getCode_enterprise() {
+        return code_enterprise;
+    }
+
+    public void setCode_enterprise(int code_enterprise) {
+        this.code_enterprise = code_enterprise;
     }
 
     public int getId() {
@@ -120,17 +130,31 @@ public class Client {
 
     @Override
     public String toString() {
-        return "Client{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", dni='" + dni + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", dateOfBirth=" + dateOfBirth +
-                ", n_actions=" + n_actions +
-                ", enterprisepurchaseactions='" + enterprisepurchaseactions + '\'' +
-                ", date_purchase='" + date_purchase + '\'' +
-                "}\n";
+        String text = "";
+        if (this.enterprisepurchaseactions == null && date_purchase == null) {
+            text = "Client{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", dni='" + dni + '\'' +
+                    ", lastName='" + lastName + '\'' +
+                    ", email='" + email + '\'' +
+                    ", phone='" + phone + '\'' +
+                    ", dateOfBirth=" + dateOfBirth +
+                    "}\n";
+        } else {
+            text = "Client{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", dni='" + dni + '\'' +
+                    ", lastName='" + lastName + '\'' +
+                    ", email='" + email + '\'' +
+                    ", phone='" + phone + '\'' +
+                    ", dateOfBirth=" + dateOfBirth +
+                    ", n_actions=" + n_actions +
+                    ", enterprisepurchaseactions='" + enterprisepurchaseactions + '\'' +
+                    ", date_purchase='" + date_purchase + '\'' +
+                    "}\n";
+        }
+        return text;
     }
 }
